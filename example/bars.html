@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>html2mp4 example</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14141a; overflow: hidden; }
+  .stage {
+    height: 100%; display: flex; align-items: flex-end;
+    justify-content: center; gap: 18px; padding: 90px 60px;
+    box-sizing: border-box; font-family: system-ui, sans-serif;
+  }
+  .bar {
+    width: 64px; background: linear-gradient(#5ad78e, #2f9c62);
+    border-radius: 8px 8px 0 0;
+    animation: grow 2s cubic-bezier(.22,1,.36,1) infinite alternate;
+  }
+  .bar:nth-child(1) { animation-delay: 0.00s; }
+  .bar:nth-child(2) { animation-delay: 0.12s; }
+  .bar:nth-child(3) { animation-delay: 0.24s; }
+  .bar:nth-child(4) { animation-delay: 0.36s; }
+  .bar:nth-child(5) { animation-delay: 0.48s; }
+  @keyframes grow { from { height: 8%; } to { height: 82%; } }
+  h1 {
+    position: absolute; top: 44px; left: 0; right: 0; text-align: center;
+    color: #e8e8ef; font: 600 26px/1 system-ui, sans-serif; letter-spacing: .04em;
+  }
+</style>
+<h1>html2mp4</h1>
+<div class="stage">
+  <div class="bar"></div>
+  <div class="bar"></div>
+  <div class="bar"></div>
+  <div class="bar"></div>
+  <div class="bar"></div>
+</div>

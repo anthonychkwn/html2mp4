@@ -1,0 +1,6 @@
+node_modules/
+.frames/
+*.mp4
+!docs/*.mp4
+out.mp4
+.DS_Store
