@@ -4,6 +4,10 @@ Record a self-contained HTML animation to MP4 through the real Chrome compositor
 
 Point it at an HTML file that animates on load. You get back a video.
 
+![the bundled example, recorded by the tool itself](docs/demo.gif)
+
+That GIF is `example/bars.html` recorded by this tool, converted to GIF for the README. Note the smooth easing: no dropped or repeated animation frames, which is the whole point (see below).
+
 ```bash
 npm install
 node record.js example/bars.html --out bars.mp4 --width 720 --height 720 --duration 4

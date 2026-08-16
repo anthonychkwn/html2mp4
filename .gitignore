@@ -4,3 +4,4 @@ node_modules/
 !docs/*.mp4
 out.mp4
 .DS_Store
+!docs/demo.gif
