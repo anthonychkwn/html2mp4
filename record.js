@@ -28,6 +28,13 @@ const path = require('path');
 const fs = require('fs');
 const { spawnSync } = require('child_process');
 
+const NUMERIC = new Set(['width', 'height', 'fps', 'duration']);
+const INTEGER = new Set(['width', 'height']);
+const STRING = new Set(['out', 'wait', 'hide']);
+
+const USAGE =
+  'usage: node record.js <input.html> [--out out.mp4] [--fps 30] [--duration 5]';
+
 function parseArgs(argv) {
   const opts = {
     out: 'out.mp4', width: 1080, height: 1920, fps: 30, duration: 5,
@@ -36,32 +43,50 @@ function parseArgs(argv) {
   const positional = [];
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--keep-frames') opts.keepFrames = true;
-    else if (a.startsWith('--')) {
-      const key = a.slice(2);
-      const val = argv[++i];
-      if (key === 'out') opts.out = val;
-      else if (key === 'width') opts.width = Number(val);
-      else if (key === 'height') opts.height = Number(val);
-      else if (key === 'fps') opts.fps = Number(val);
-      else if (key === 'duration') opts.duration = Number(val);
-      else if (key === 'wait') opts.wait = val;
-      else if (key === 'hide') opts.hide = val;
-      else throw new Error(`unknown option --${key}`);
-    } else positional.push(a);
+    if (a === '--keep-frames') { opts.keepFrames = true; continue; }
+    if (!a.startsWith('--')) { positional.push(a); continue; }
+
+    const key = a.slice(2);
+    if (!NUMERIC.has(key) && !STRING.has(key)) throw new Error(`unknown option --${key}`);
+    const val = argv[++i];
+    if (val === undefined) throw new Error(`--${key} needs a value`);
+
+    if (!NUMERIC.has(key)) { opts[key] = val; continue; }
+    const n = Number(val);
+    // Number('') is 0 and Number('30px') is NaN; both must be rejected before
+    // they reach the frame maths, where they turn into an unreadable failure.
+    if (val.trim() === '' || !Number.isFinite(n) || n <= 0) {
+      throw new Error(`--${key} needs a positive number, got "${val}"`);
+    }
+    if (INTEGER.has(key) && !Number.isInteger(n)) {
+      throw new Error(`--${key} needs a whole number of pixels, got "${val}"`);
+    }
+    opts[key] = n;
   }
-  if (!positional.length) {
-    console.error('usage: node record.js <input.html> [--out out.mp4] [--fps 30] [--duration 5]');
-    process.exit(1);
+
+  if (!positional.length) throw new Error(`no input file given
+${USAGE}`);
+  if (positional.length > 1) {
+    throw new Error(`expected one input file, got ${positional.length}: ${positional.join(' ')}
+${USAGE}`);
   }
   opts.input = path.resolve(positional[0]);
+  // Chrome happily renders its own error page for a missing file, which would
+  // otherwise be recorded as a perfectly valid video of nothing.
+  if (!fs.existsSync(opts.input)) throw new Error(`no such file: ${opts.input}`);
   return opts;
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-(async () => {
-  const o = parseArgs(process.argv);
+async function main() {
+  let o;
+  try {
+    o = parseArgs(process.argv);
+  } catch (err) {
+    console.error('[error]', err.message);
+    process.exit(1);
+  }
   const FRAMES = Math.round(o.fps * o.duration);
   const FRAME_MS = 1000 / o.fps;
   const frameDir = path.join(path.dirname(path.resolve(o.out)), '.frames');
@@ -155,4 +180,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }
   if (!o.keepFrames) fs.rmSync(frameDir, { recursive: true, force: true });
   console.log('[done]', o.out);
-})().catch(err => { console.error(err); process.exit(1); });
+}
+
+module.exports = { parseArgs };
+
+if (require.main === module) {
+  main().catch(err => { console.error(err); process.exit(1); });
+}

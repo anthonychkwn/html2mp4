@@ -48,8 +48,17 @@ This means the tool needs a real display session. It will not work over a bare S
 
 - The page is loaded over `file://` with `--allow-file-access-from-files`, so local fonts, images and scripts referenced relative to the HTML all resolve.
 - Recording starts as soon as the page is loaded and `--wait` is satisfied. If your animation has a lead-in you do not want, either delay it in CSS or trim the result.
+- Arguments are validated before Chrome starts: a missing input file, a missing option value, and a non-positive or non-numeric `--fps` / `--duration` / `--width` / `--height` all fail immediately with one line of explanation. Without that check a typo'd filename records a few seconds of Chrome's own "file not found" page, which looks like a successful run.
 - Audio is not captured. Mux it in afterwards with ffmpeg.
 - Frames are JPEG at quality 92 and the encode is `libx264 -crf 18`, which is visually lossless for typical motion-graphics content. For flat-colour graphics you can push `-crf` lower by editing the ffmpeg call.
+
+## Tests
+
+```bash
+npm test
+```
+
+Covers argument parsing and validation. The recording path itself needs a display session and `ffmpeg`, so it is exercised with `npm run example`.
 
 ## License
 
