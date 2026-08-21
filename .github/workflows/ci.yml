@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # The CLI is used on Windows as much as Linux and does its own path
+    # normalisation, so the argument tests run on both.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Run unit tests
+        run: npm test
+
+  record:
+    # End to end: drive the real Chrome compositor under Xvfb and prove a
+    # playable MP4 comes out, because a green argument parser says nothing
+    # about whether the recording path still works.
+    runs-on: ubuntu-latest
+    env:
+      # Keep the browser inside the workspace so the sudo install below and the
+      # unprivileged run step agree on where it lives.
+      PUPPETEER_CACHE_DIR: ${{ github.workspace }}/.chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install ffmpeg and Xvfb
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg xvfb
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+      - name: Install Chrome and its system libraries
+        # puppeteer resolves the right apt packages for the runner image itself,
+        # which beats pinning a list that changes with every Ubuntu release.
+        run: sudo -E env "PATH=$PATH" npx puppeteer browsers install chrome --install-deps
+      - name: Record the example animation
+        run: xvfb-run -a --server-args="-screen 0 1280x1280x24" npm run example
+      - name: Assert the MP4 is real
+        run: |
+          probe() { ffprobe -v error -select_streams v:0 -show_entries "$1" -of csv=p=0 example/bars.mp4; }
+          W=$(probe stream=width); H=$(probe stream=height); D=$(probe format=duration)
+          echo "example/bars.mp4: ${W}x${H}, ${D}s, $(stat -c%s example/bars.mp4) bytes"
+          test "$W" = "720"
+          test "$H" = "720"
+          # asked for 4s; allow the tail of the capture to round either way
+          awk -v d="$D" 'BEGIN { exit !(d >= 3.5 && d <= 4.5) }'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bars-mp4
+          path: example/bars.mp4

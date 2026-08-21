@@ -1,5 +1,7 @@
 # html2mp4
 
+[![CI](https://github.com/anthonychkwn/html2mp4/actions/workflows/ci.yml/badge.svg)](https://github.com/anthonychkwn/html2mp4/actions/workflows/ci.yml)
+
 Record a self-contained HTML animation to MP4 through the real Chrome compositor.
 
 Point it at an HTML file that animates on load. You get back a video.
