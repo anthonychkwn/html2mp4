@@ -5,7 +5,7 @@
   "main": "record.js",
   "bin": { "html2mp4": "record.js" },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test",
     "example": "node record.js example/bars.html --out example/bars.mp4 --width 720 --height 720 --duration 4"
   },
   "keywords": ["html", "video", "mp4", "puppeteer", "ffmpeg", "screencast", "animation"],
